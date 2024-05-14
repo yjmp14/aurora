@@ -18,9 +18,6 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
 )
