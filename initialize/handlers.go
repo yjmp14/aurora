@@ -9,6 +9,8 @@ import (
 	chatgpt_types "aurora/typings/chatgpt"
 	officialtypes "aurora/typings/official"
 	"aurora/util"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"io"
 	"os"
 	"strings"
@@ -75,6 +77,7 @@ func (h *Handler) refresh(c *gin.Context) {
 	}
 	proxyUrl := h.proxy.GetProxyIP()
 	client := bogdanfinn.NewStdClient()
+	client.Client.GetCookieJar()
 	openaiRefreshToken, status, err := chatgpt.GETTokenForRefreshToken(client, refreshToken.RefreshToken, proxyUrl)
 	if err != nil {
 		c.JSON(400, gin.H{
@@ -86,6 +89,12 @@ func (h *Handler) refresh(c *gin.Context) {
 		return
 	}
 	c.JSON(status, openaiRefreshToken)
+}
+
+func (h *Handler) InitBasicConfigForChatGPT() {
+	proxy_url := h.proxy.GetProxyIP()
+	client := bogdanfinn.NewStdClient()
+	chatgpt.GetDpl(client, proxy_url)
 }
 
 func (h *Handler) session(c *gin.Context) {
@@ -210,6 +219,7 @@ func (h *Handler) nightmare(c *gin.Context) {
 
 	uid := uuid.NewString()
 	client := bogdanfinn.NewStdClient()
+	client.SetCookies("https://chatgpt.com", chatgpt.BasicCookies)
 	turnStile, status, err := chatgpt.InitTurnStile(client, secret, proxyUrl)
 	if err != nil {
 		c.JSON(status, gin.H{
@@ -329,15 +339,6 @@ func (h *Handler) engines(c *gin.Context) {
 		Object: "list",
 	}
 	var resModelList []ResData
-	if len(resp.Models) > 2 {
-		res_data := ResData{
-			ID:      "gpt-4-mobile",
-			Object:  "model",
-			Created: 1685474247,
-			OwnedBy: "openai",
-		}
-		resModelList = append(resModelList, res_data)
-	}
 	for _, model := range resp.Models {
 		res_data := ResData{
 			ID:      model.Slug,
